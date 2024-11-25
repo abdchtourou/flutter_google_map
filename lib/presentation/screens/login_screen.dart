@@ -1,67 +1,221 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_google_maps/business_logic/cubit/phone_auth_cubit/phone_auth_cubit.dart';
 import 'package:flutter_google_maps/constant/extensions.dart';
 import 'package:flutter_google_maps/helpers/routes/routes.dart';
+import '../../business_logic/cubit/phone_auth_cubit/phone_auth_cubit.dart';
+import '../../constant/my_colors.dart';
 
-import '../widgets/next_button.dart';
-import '../widgets/phone_filed.dart';
+// ignore: must_be_immutable
+class LoginScreen extends StatelessWidget {
+  LoginScreen({Key? key}) : super(key: key);
 
-class LoginScreen extends StatefulWidget {
-  LoginScreen({super.key});
+  final GlobalKey<FormState> _phoneFormKey = GlobalKey();
 
-  @override
-  _LoginScreenState createState() => _LoginScreenState();
-}
+  late String phoneNumber;
 
-class _LoginScreenState extends State<LoginScreen> {
-  TextEditingController controller = TextEditingController();
-  bool isPhoneValid = false; // State variable for phone validation
+  Widget _buildIntroTexts() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'What is your phone number?',
+          style: TextStyle(
+              color: Colors.black, fontSize: 24, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(
+          height: 30,
+        ),
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 2),
+          child: const Text(
+            'Please enter yout phone number to verify your account.',
+            style: TextStyle(
+              color: Colors.black,
+              fontSize: 18,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
-  void validatePhone(bool isValid) {
-    setState(() {
-      isPhoneValid = isValid;
-    });
+  Widget _buildPhoneFormField() {
+    return Row(
+      children: [
+        Expanded(
+          flex: 1,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+            decoration: BoxDecoration(
+              border: Border.all(color: MyColors.lightGrey),
+              borderRadius: const BorderRadius.all(Radius.circular(6)),
+            ),
+            child: Text(
+              generateCountryFlag() + ' +20',
+              style: const TextStyle(fontSize: 18, letterSpacing: 2.0),
+            ),
+          ),
+        ),
+        const SizedBox(
+          width: 16,
+        ),
+        Expanded(
+          flex: 2,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+            decoration: BoxDecoration(
+              border: Border.all(color: MyColors.blue),
+              borderRadius: const BorderRadius.all(Radius.circular(6)),
+            ),
+            child: TextFormField(
+              autofocus: true,
+              style: const TextStyle(
+                fontSize: 18,
+                letterSpacing: 2.0,
+              ),
+              decoration: const InputDecoration(border: InputBorder.none),
+              cursorColor: Colors.black,
+              keyboardType: TextInputType.phone,
+              validator: (value) {
+                if (value!.isEmpty) {
+                  return 'Please enter yout phone number!';
+                } else if (value.length < 10) {
+                  return 'Too short for a phone number!';
+                }
+                return null;
+              },
+              onSaved: (value) {
+                phoneNumber = value!;
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String generateCountryFlag() {
+    String countryCode = 'eg';
+
+    String flag = countryCode.toUpperCase().replaceAllMapped(RegExp(r'[A-Z]'),
+            (match) => String.fromCharCode(match.group(0)!.codeUnitAt(0) + 127397));
+
+    return flag;
+  }
+
+  Future<void> _register(BuildContext context) async {
+    if (!_phoneFormKey.currentState!.validate()) {
+      Navigator.pop(context);
+      return;
+    } else {
+      Navigator.pop(context);
+      _phoneFormKey.currentState!.save();
+      BlocProvider.of<PhoneAuthCubit>(context).submitPhoneNumber(phoneNumber);
+    }
+  }
+
+  Widget _buildNextButton(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: ElevatedButton(
+        onPressed: () {
+          showProgressIndicator(context);
+
+          _register(context);
+        },
+        child: const Text(
+          'Next',
+          style: TextStyle(color: Colors.white, fontSize: 16),
+        ),
+        style: ElevatedButton.styleFrom(
+          minimumSize: const Size(110, 50), backgroundColor: Colors.black,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(6),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void showProgressIndicator(BuildContext context) {
+    AlertDialog alertDialog = const AlertDialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      content: Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+        ),
+      ),
+    );
+
+    showDialog(
+      barrierColor: Colors.white.withOpacity(0),
+      barrierDismissible: false,
+      context: context,
+      builder: (context) {
+        return alertDialog;
+      },
+    );
+  }
+
+  Widget _buildPhoneNumberSubmitedBloc() {
+    return BlocListener<PhoneAuthCubit, PhoneAuthState>(
+      listenWhen: (previous, current) {
+        return previous != current;
+      },
+      listener: (context, state) {
+        if (state is Loading) {
+          showProgressIndicator(context);
+        }
+
+        if (state is PhoneNumberSubmited) {
+          Navigator.pop(context);
+          context.pushNamed(Routes.OtpScreen, arguments: phoneNumber);
+
+        }
+        // firebaset97
+
+        if (state is ErrorOccurred) {
+          Navigator.pop(context);
+          String errorMsg = (state).errorMsg;
+          print('///////////////////// abd test zed $errorMsg');
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMsg),
+              backgroundColor: Colors.black,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      },
+      child: Container(),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-        backgroundColor: const Color(0xFF0E151B),
-        body: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 30, vertical: 88),
-          child: SingleChildScrollView(
+        backgroundColor: Colors.white,
+        body: Form(
+          key: _phoneFormKey,
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 32, vertical: 88),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildIntroTexts(),
-                PhoneFiled(
-                  phoneController: controller,
-                  onPhoneValidation:
-                  validatePhone, // Pass the validation callback
-                ),
                 const SizedBox(
-                  height: 80,
+                  height: 110,
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: NextButton(
-                    onPressed: () {
-                      if (isPhoneValid) {
-                        context.pushReplacementNamed(
-                            Routes.resetPasswordVerification);
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Please enter a valid phone number.'),
-                          ),
-                        );
-                      }
-                    },
-                  ),
+                _buildPhoneFormField(),
+                const SizedBox(
+                  height: 70,
                 ),
-                _buildPhoneNubmerSubmitedBloc()
+                _buildNextButton(context),
+                _buildPhoneNumberSubmitedBloc(),
               ],
             ),
           ),
@@ -69,63 +223,4 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-}
-void showDialogLoading(BuildContext context){
-  AlertDialog alertDialog =const AlertDialog(
-    backgroundColor: Colors.transparent,
-    elevation: 0,
-    content: Center(
-      child: CircularProgressIndicator(),
-    ),
-  );
-  showDialog(
-    barrierColor: Colors.white.withOpacity(0),
-      barrierDismissible: false,
-
-      context: context, builder: (_){
-    return alertDialog;
-
-  });
-}
-
-Widget _buildPhoneNubmerSubmitedBloc() {
-  return BlocListener<PhoneAuthCubit,PhoneAuthState>(listenWhen: (prev, current) {
-    return prev != current;
-  },
-  listener: (context,state){
-
-    if(state is PhoneAuthLoading){
-      showDialogLoading(context);
-    }
-      if(state is PhoneAuthPhoneNumberSubmit){
-        context.pop();
-        context.pushReplacementNamed(Routes.resetPasswordVerification);
-      }
-  },
-  );
-}
-
-Widget _buildIntroTexts() {
-  return Column(
-    children: [
-      const Text(
-        "What is your Phone Number",
-        style: TextStyle(
-            fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold),
-      ),
-      const SizedBox(
-        height: 30,
-      ),
-      Container(
-        margin: const EdgeInsets.symmetric(horizontal: 2),
-        child: const Text(
-          "Please enter your phone number to verify your account",
-          style: TextStyle(color: Colors.white, fontSize: 18),
-        ),
-      ),
-      const SizedBox(
-        height: 100,
-      ),
-    ],
-  );
 }

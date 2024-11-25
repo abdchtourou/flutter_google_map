@@ -3,7 +3,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 
 class PinCodeField extends StatelessWidget {
-  const PinCodeField({super.key});
+   PinCodeField({super.key, required this.onChanged});
+  void Function(String) onChanged;
 
   @override
   Widget build(BuildContext context) {
