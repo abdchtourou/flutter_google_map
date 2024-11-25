@@ -2,7 +2,17 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:material_floating_search_bar/material_floating_search_bar.dart';
+import 'package:uuid/uuid.dart';
+
+import '../../business_logic/cubit/maps/maps_cubit.dart';
+import '../../constant/my_colors.dart';
+import '../../data/models/place.dart';
+import '../../data/models/place_directions.dart';
+import '../../data/models/place_suggestion.dart';
+import '../../helpers/location_helper.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({Key? key}) : super(key: key);

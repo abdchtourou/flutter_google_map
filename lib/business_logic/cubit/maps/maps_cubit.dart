@@ -1,10 +1,11 @@
 import 'package:bloc/bloc.dart';
-import 'package:flutter_maps/data/models/Place_suggestion.dart';
-import 'package:flutter_maps/data/models/place.dart';
-import 'package:flutter_maps/data/models/place_directions.dart';
-import 'package:flutter_maps/data/repository/maps_repo.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:meta/meta.dart';
+
+import '../../../data/models/place.dart';
+import '../../../data/models/place_directions.dart';
+import '../../../data/models/place_suggestion.dart';
+import '../../../data/repo/maps_repo.dart';
 
 part 'maps_state.dart';
 
